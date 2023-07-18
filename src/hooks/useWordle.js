@@ -3,15 +3,52 @@ import React, { useState } from "react";
 const useWordle = (solution) => {
   const [turn, setTurn] = useState(0);
   const [currentGuess, setCurrentGuess] = useState("");
-  const [guesses, setGuesses] = useState([]); // each guess is an array of strings
+  const [guesses, setGuesses] = useState([...Array(6)]); // each guess is an array of strings
   const [history, setHistory] = useState([]); // each guess is a string
-  const [isCurrent, setIsCurrent] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
 
+  //format a guess into an array of letter objs
   const formatGuess = () => {
-    console.log("formatGuess", currentGuess);
+    let solutionArray = [...solution];
+    let formattedGuess = [...currentGuess].map((letter) => {
+      return { key: letter, color: "grey" };
+    });
+
+    //find any green letters
+    formattedGuess.forEach((letter, i) => {
+      if (solutionArray[i] === letter.key) {
+        formattedGuess[i].color = "green";
+        solutionArray[i] = null;
+      }
+    });
+
+    //find any yellow letters
+    formattedGuess.forEach((letter, i) => {
+      if (solutionArray.includes(letter.key) && letter.color !== "green") {
+        formattedGuess[i].color = "yellow";
+        solutionArray[solutionArray.indexOf(letter.key)] = null;
+      }
+    });
+    return formattedGuess;
   };
 
-  const addNewGuess = () => {};
+  const addNewGuess = (formatted) => {
+    if (currentGuess === solution) {
+      setIsCorrect(true);
+    }
+    setGuesses((prevGuesses) => {
+      let newGuesses = [...prevGuesses];
+      newGuesses[turn] = formatted;
+      return newGuesses;
+    });
+    setHistory((prevHistory) => {
+      return [...prevHistory, currentGuess];
+    });
+    setTurn((prevTurn) => {
+      return prevTurn + 1;
+    });
+    setCurrentGuess("");
+  };
 
   //handle keyup event and track current guess
   // if user presses enter add new guess
@@ -32,7 +69,8 @@ const useWordle = (solution) => {
         console.log("word must be 5 chars long");
         return;
       }
-      formatGuess();
+      const formatted = formatGuess();
+      addNewGuess(formatted);
     }
 
     if (key === "Backspace") {
@@ -51,7 +89,7 @@ const useWordle = (solution) => {
     }
   };
 
-  return { turn, currentGuess, guesses, isCurrent, handleKeyUp };
+  return { turn, currentGuess, guesses, isCorrect, handleKeyUp };
 };
 
 export default useWordle;
